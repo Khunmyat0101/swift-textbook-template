@@ -180,36 +180,111 @@ decodeし、簡単に管理できるようにしています。
 
 **なぜこう書くのか：**
 
-**もしこう書かなかったら：**
-（この部分を省略したり変えたりすると何が起きるか。実際に試した結果があればここに書く）
+APIから届くデータの名前（trackNameなど）と、Swiftの変数の名前を合わせることで、プログラムが自動的に中身を読み取ってくれるからです。また、Identifiableをつけることで、リスト（List）で表示するときに、どの曲がどれかをSwiftが正確に区別できるようになります。
 
+
+**もしこう書かなかったら：**
+
+ータが読み込めない： 名前の書き方を間違えると、APIからデータを受け取ることができず、リストが空っぽのままになってしまいます。
+
+リストが動かない： Identifiableがないと、Swiftが「どのデータが新しく増えたか」を判断できず、画面に表示する際にエラーになったり、動きが遅くなったりします。
 ---
 
 ### API通信の処理
 
 ```swift
-// 該当部分のコードを抜粋して貼る
+    func searchMusic() async {
+        guard let encodedText = searchText.addingPercentEncoding(
+            withAllowedCharacters: .urlQueryAllowed
+        ) else { return }
+
+        let urlString = "https://itunes.apple.com/search?term=\(encodedText)&media=music&country=jp&limit=25"
+
+        guard let url = URL(string: urlString) else { return }
+
+        isLoading = true
+
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let response = try JSONDecoder().decode(SearchResponse.self, from: data)
+            songs = response.results
+        } catch {
+            print("エラー: \(error.localizedDescription)")
+            songs = []
+        }
+
+        isLoading = false
+    }
 ```
 
 **何をしているか：**
 
+インターネット（iTunes）に「この曲を探して！」とお願いして、返ってきたデータをアプリで使える形にする処理を書いています。
+
+
 **なぜこう書くのか：**
 
+インターネットとの通信には時間がかかるため、async や await を使います。これを使うことで、「データの準備ができるまで待つ」という命令になり、アプリがフリーズするのを防ぐことができます。
+
+
 **もしこう書かなかったら：**
+
+画面が固まる： データをダウンロードしている間、ボタンが押せなくなったり、画面が真っ白なまま動かなくなったりします。
+
+データが壊れても気づけない： do-catch（エラー処理）を書かないと、ネットが繋がっていない時にアプリが突然終了（クラッシュ）してしまいます。
+
 
 ---
 
 ### ビューの構成
 
 ```swift
-// 該当部分のコードを抜粋して貼る
+struct SongRow: View {
+    let song: Song
+
+    var body: some View {
+        HStack(spacing: 12) {
+            AsyncImage(url: URL(string: song.artworkUrl100)) { image in
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } placeholder: {
+                Color.gray.opacity(0.3)
+            }
+            .frame(width: 60, height: 60)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(song.trackName)
+                    .font(.headline)
+                    .lineLimit(1)
+
+                Text(song.artistName)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
 ```
 
 **何をしているか：**
 
+リストの「1行分」のデザインです。左側に画像、右側に曲名と歌手名を並べるように指示しています。
+
+
 **なぜこう書くのか：**
 
+HStack（横並び）と VStack（縦並び）を組み合わせることで、複雑なレイアウトもシンプルに作れるからです。また、AsyncImage を使うことで、ネット上の画像を自動で読み込んで表示してくれます。
+
+
 **もしこう書かなかったら：**
+
+見た目が崩れる： すべての文字や画像が重なってしまったり、バラバラな場所に表示されたりして、アプリらしく見えません。
+
+画像が表示されない： ネットから画像をダウンロードして表示するコードを何十行も自分で書かなければならず、とても大変になります。
+
 
 ---
 
