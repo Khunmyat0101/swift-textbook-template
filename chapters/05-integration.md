@@ -402,43 +402,90 @@ class PhotoRecord {
 ### タブ構成の設計
 
 ```swift
-// 該当部分のコードを抜粋して貼る
+struct ContentView: View {
+    var body: some View {
+        TabView {
+            MapTab()
+                .tabItem {
+                    Label("マップ", systemImage: "map")
+                }
+
+            ListTab()
+                .tabItem {
+                    Label("一覧", systemImage: "list.bullet")
+                }
+        }
+    }
+}
 ```
 
 **何をしているか：**
-
+TabViewを使って、「マップ」と「一覧」の2つの画面を切り替えられるようにしています。ユーザーは画面下のタブをタップするだけで、それぞれの画面を表示できます。
 **なぜこう書くのか：**
-
+地図と一覧を別々の画面に分けることで、画面が見やすくなります。また、TabViewを使うことで、アプリによくあるタブ形式の画面を簡単に作ることができます。
 **もしこう書かなかったら：**
-
+1つの画面にすべての機能を表示することになり、画面が見づらくなります。ユーザーも操作しにくくなります。
 ---
 
 ### カメラと位置情報の連携
 
 ```swift
-// 該当部分のコードを抜粋して貼る
+@Observable
+class LocationManager: NSObject, CLLocationManagerDelegate {
+    private let manager = CLLocationManager()
+    var currentLocation: CLLocationCoordinate2D?
+
+    override init() {
+        super.init()
+        manager.delegate = self
+        manager.desiredAccuracy = kCLLocationAccuracyBest
+        manager.requestWhenInUseAuthorization()
+        manager.startUpdatingLocation()
+    }
+
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        currentLocation = locations.last?.coordinate
+    }
+}
 ```
 
 **何をしているか：**
+現在地を取得するためのクラスです。位置情報の使用許可を求め、現在の緯度と経度を取得しています。写真を保存するときは、この位置情報も一緒に保存します。
 
 **なぜこう書くのか：**
+写真を撮った場所を地図に表示するためには、現在地を取得する必要があります。CLLocationManagerを使うことで、GPSから位置情報を取得できます。
 
 **もしこう書かなかったら：**
-
+現在地を取得できないため、写真を保存しても地図に表示することができません。
 ---
 
 ### SwiftDataでの画像保存
 
 ```swift
-// 該当部分のコードを抜粋して貼る
+    func saveRecord() {
+        guard let location = locationManager.currentLocation else { return }
+
+        let record = PhotoRecord(
+            title: title,
+            memo: memo,
+            latitude: location.latitude,
+            longitude: location.longitude,
+            imageData: selectedImageData
+        )
+        modelContext.insert(record)
+        dismiss()
+    }
+}
 ```
 
 **何をしているか：**
+タイトル、メモ、位置情報、写真を1つのデータとして作成し、SwiftDataに保存しています。保存が終わると画面を閉じます。
 
 **なぜこう書くのか：**
+PhotoRecordに必要な情報をまとめて作成し、modelContext.insert()を使って保存することで、あとから一覧や地図で表示できるようになります。
 
 **もしこう書かなかったら：**
-
+入力した内容は保存されず、アプリを閉じると写真やメモなどのデータは消えてしまいます。
 ---
 
 （必要に応じてセクションを増やす）
@@ -449,9 +496,9 @@ class PhotoRecord {
 |------|------|--------|
 | 例：`TabView` | 複数のビューをタブで切り替えるコンポーネント | `TabView { ... }.tabViewStyle(.page)` |
 | 例：`CLLocationManager` | GPS位置情報を取得するAPIManager | `let location = manager.location?.coordinate` |
-| | | |
-| | | |
-| | | |
+| modelContext | SwiftDataのデータを保存・削除する | modelContext.insert(record)|
+| CLLocationManager|現在地を取得する | manager.startUpdatingLocation()|
+| Annotation|地図に独自のマーカーを表示する | Annotation(title, coordinate: ...)|
 
 ## 自分の実験メモ
 
@@ -470,14 +517,19 @@ class PhotoRecord {
 ## AIに聞いて特に理解が深まった質問 TOP3
 
 1. **質問：**
+2. @Queryは何をしていますか。
    **得られた理解：**
-
-2. **質問：**
+   SwiftDataに保存されているデータを自動で取得し、画面に表示するために使うことが分かりました。
+   
+4. **質問：**
+5. modelContext.insert()は何をしていますか。
    **得られた理解：**
-
-3. **質問：**
+   作成したデータをSwiftDataへ保存するためのメソッドだと理解しました。
+   
+7. **質問：**
    **得られた理解：**
 
 ## この章のまとめ
 
 （この章で学んだ最も重要なことを、未来の自分が読み返したときに役立つように書く）
+この章では、写真、地図、位置情報、SwiftDataを組み合わせたアプリの作り方について学びました。それぞれの機能を別々に使うだけでなく、1つのアプリとして連携させる方法を理解できました。また、写真と位置情報を一緒に保存し、地図や一覧に表示する流れも確認することができました。
