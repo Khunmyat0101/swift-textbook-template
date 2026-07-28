@@ -316,33 +316,94 @@ pitch、roll、yawの値が更新されず、端末を傾けてもバブルが�
 ### 歩数計（CMPedometer）
 
 ```swift
-// このコードではCMPedometerを使用していません。
+    private let pedometer = CMPedometer()
+    var stepCount: Int = 0
+    var distance: Double = 0     // メートル
+    var isPedometerAvailable: Bool = false
+
+    // 位置関連
+    private let locationManager = CLLocationManager()
+    var currentSpeed: Double = 0  // m/s
+    var locations: [CLLocationCoordinate2D] = []
+
+    // 状態
+    var isTracking: Bool = false
+    var startTime: Date?
+    var endTime: Date?
+
+    override init() {
+        super.init()
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.requestWhenInUseAuthorization()
+        isPedometerAvailable = CMPedometer.isStepCountingAvailable()
+    }
+    func startTracking() {
+        isTracking = true
+        startTime = Date()
+        endTime = nil
+        stepCount = 0
+        distance = 0
+        locations = []
+
+        // 歩数計の開始
+        if isPedometerAvailable {
+            pedometer.startUpdates(from: Date()) { [weak self] data, error in
+                guard let self = self, let data = data else { return }
+
+                DispatchQueue.main.async {
+                    self.stepCount = data.numberOfSteps.intValue
+                    if let dist = data.distance {
+                        self.distance = dist.doubleValue
+                    }
+                }
+            }
+        }
+
+        // 位置情報の開始
+        locationManager.startUpdatingLocation()
+    }
+
+    func stopTracking() {
+        isTracking = false
+        endTime = Date()
+        pedometer.stopUpdates()
+        locationManager.stopUpdatingLocation()
+    }
+
+
 ```
 
 **何をしているか：**
-この水平器アプリでは歩数を取得していません。
-
+CMPedometerを使って歩数と移動距離を取っています。歩くと歩数が増えて、移動した距離も更新されます。
 **なぜこう書くのか：**
-このアプリは端末の傾きを調べるアプリであり、歩数を取得する必要がないためです。
-
+ユーザーがどれくらい歩いたかを表示するためです。また、歩数と移動距離をリアルタイムで更新するためです
 **もしこう書かなかったら：**
-水平器アプリの動作には影響しません。
+歩数や移動距離を取ることができません。そのため、画面の歩数や距離、消費カロリーも更新されなくなります。
 ---
 
 ### CoreLocationとの連携
 
 ```swift
-// このコードではCoreLocationを使用していません。
+    private let locationManager = CLLocationManager()
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.requestWhenInUseAuthorization()
+        locationManager.startUpdatingLocation()
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations newLocations: [CLLocation]) {
+        guard let location = newLocations.last else { return }
+        currentSpeed = max(0, location.speed)
+        locations.append(location.coordinate)
+    }
+
 ```
 
 **何をしているか：**
-このアプリでは位置情報や移動速度を取得していません。
-
+CoreLocationを使って位置情報を取り、移動速度を更新しています。
 **なぜこう書くのか：**
-水平器には位置情報が必要なく、CoreMotionの姿勢データだけで動作するためです。
-
+歩いているときの速度を表示するためです。また、位置情報を使って移動を記録できます。
 **もしこう書かなかったら：**
-水平器アプリの動作には影響しません。
+速度や位置情報を取ることができません。そのため、速度メーターは動かず、移動した場所も記録できません。
 ---
 
 （必要に応じてセクションを増やす）
