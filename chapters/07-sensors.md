@@ -409,7 +409,8 @@ class MotionManager {
 | 例：`CMPedometer` | 歩数や歩行距離をカウント | `pedometer.queryPedometerData(from: startDate, to: Date())` |
 | startDeviceMotionUpdates|姿勢データの取得を開始する | motionManager.startDeviceMotionUpdates(to: .main)pitch|
 |pitch |端末の前後の傾きを表す | motion.attitude.pitch|
-| roll| 端末の左右の傾きを表す|motion.attitude.roll |
+| [weak self]| クロージャとの相互保持による循環参照（メモリリーク）を防止|pedometer.startUpdates(from: Date()) { [weak self] data, error in
+                guard let self = self, let data = data else { return } |
 
 ## 自分の実験メモ
 
