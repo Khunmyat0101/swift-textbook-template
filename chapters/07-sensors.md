@@ -427,12 +427,14 @@ class MotionManager {
 2. pitch、roll、yawの違いは何ですか。
    **得られた理解：**
    pitchは前後、rollは左右、yawは水平方向の回転を表します。
-3. **質問：**
-4. なぜdeviceMotionUpdateIntervalを設定しますか。
+   
+4. **質問：**
+5. なぜdeviceMotionUpdateIntervalを設定しますか。
    **得られた理解：**
    センサーデータを取得する間隔を設定し、バブルを滑らかに動かすためです。
-6. **質問：**
-7. なぜstopDeviceMotionUpdates()が必要ですか。
+   
+7. **質問：**
+8. なぜstopDeviceMotionUpdates()が必要ですか。
    **得られた理解：**
    画面を閉じた後に不要なセンサー処理を止め、バッテリー消費を減らすためです。
 ## この章のまとめ
