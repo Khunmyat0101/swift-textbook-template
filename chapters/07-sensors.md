@@ -428,9 +428,9 @@ class MotionManager {
 ## AIに聞いて特に理解が深まった質問 TOP3
 
 1. **質問：**
-2. pitch、roll、yawの違いは何ですか。
+2. DispatchQueue.mainはなんで必要？
    **得られた理解：**
-   pitchは前後、rollは左右、yawは水平方向の回転を表します。
+   CMPedometer の処理がバックグラウンドスレッドで行われるためです。iOS のルールに従い、UI 更新をメインスレッドへ切り替えて安全に反映させるために必要だと理解しました。
    
 4. **質問：**
 5. なぜdeviceMotionUpdateIntervalを設定しますか。
